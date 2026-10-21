@@ -6,9 +6,8 @@
   <meta name="color-scheme" content="light">
   <meta name="theme-color" content="#24765b">
   <meta name="description" content="自分専用のシンプルな買い物メモ。メモはこの端末のブラウザ内に保存されます。">
-  <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" type="image/png" href="./icon-192.png">
   <title>買い物メモ</title>
+  <link rel="manifest" href="./manifest.webmanifest">
   <style>
     :root {
       color-scheme: light;
@@ -55,6 +54,37 @@
     .items {list-style:none;margin:0;padding:0 12px;}
     .item {display:flex;gap:7px;align-items:center;min-height:61px;border-bottom:1px solid #edf0ed;padding:5px 7px;}
     .item:last-child{border-bottom:0;}
+    .item-main {display:flex;flex:1;align-items:center;min-width:0;gap:3px;}
+    .item-actions{display:flex;align-items:center;flex-shrink:0;}
+    .item {flex-wrap:wrap;}
+    .favorite-button{display:flex;align-items:center;gap:4px;align-self:center;border:1px solid #cddbd2;background:#fff;color:#69776f;border-radius:10px;padding:7px 9px;min-height:36px;font-size:12px;font-weight:730;white-space:nowrap;}
+    .favorite-button:hover{background:var(--soft-green);}
+    .favorite-button[aria-pressed="true"]{background:var(--soft-green);color:var(--green-dark);border-color:#a6ceb8;}
+    .favorite-button svg {width:15px;height:15px;}
+    .favorite-button[aria-pressed="true"] svg {fill:currentColor;}
+    .tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:0 0 13px;}
+    .tab{display:flex;justify-content:center;align-items:center;gap:8px;min-height:52px;padding:9px 10px;border:1px solid #dce6dc;background:#f7f9f6;color:#607167;border-radius:14px;font-weight:750;font-size:15px;}
+    .tab[aria-selected="true"]{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 4px 12px #24765b21;}
+    .tab-count{display:inline-flex;align-items:center;justify-content:center;min-width:23px;padding:1px 6px;border-radius:50px;background:#e5eee7;font-size:12px;color:#476455;}
+    .tab[aria-selected="true"] .tab-count{background:#ffffff2e;color:#fff;}
+    .favorite-intro{padding:22px 20px 11px;}
+    .favorite-intro h2{font-size:19px;margin-bottom:8px;}
+    .favorite-intro p{font-size:13px;line-height:1.7;color:var(--muted);margin:0;}
+    .favorite-list{padding-bottom:10px;}
+    .favorite-item{display:flex;align-items:center;gap:9px;padding:14px 9px;border-bottom:1px solid #edf0ed;flex-wrap:wrap;}
+    .favorite-item:last-child{border-bottom:0;}
+    .favorite-item-info{flex:1;min-width:110px;padding:1px 4px;}
+    .favorite-item-name{display:block;font-size:16px;line-height:1.45;font-weight:650;overflow-wrap:anywhere;}
+    .favorite-item-status{display:block;font-size:11px;color:var(--muted);margin-top:4px;}
+    .bring-back{min-height:40px;border-radius:11px;border:1px solid #afd0ba;background:var(--soft-green);color:var(--green-dark);font-size:13px;font-weight:750;padding:8px 11px;}
+    .bring-back:hover{background:#d7ebdc;}
+    .bring-back:disabled{background:#f6f8f5;border-color:#e0e8e0;color:#718078;opacity:1;}
+    .favorite-remove{width:39px;height:40px;flex:0 0 39px;border:0;background:transparent;color:var(--muted);display:grid;place-items:center;border-radius:10px;}
+    .favorite-remove:hover{background:#fff1ef;color:var(--danger);}
+    .favorite-remove svg{width:19px;height:19px;}
+    .favorite-item .edit-form{flex-basis:100%;}
+    [hidden]{display:none!important;}
+
     .checklabel {display:flex;flex:1;gap:12px;align-items:center;min-width:0;padding:9px 4px;cursor:pointer;}
     .check {appearance:none;-webkit-appearance:none;position:relative;margin:0;width:25px;height:25px;flex:0 0 25px;border:2px solid #aebeb3;background:#fff;border-radius:8px;cursor:pointer;}
     .check:checked {border-color:var(--green);background:var(--green);}
@@ -107,14 +137,18 @@
     </header>
 
     <div id="storage-warning" class="warning" role="alert" hidden>このブラウザでは自動保存を利用できません。メモを失わないよう、バックアップを保存してください。通常モードでの利用をおすすめします。</div>
-    <section class="panel" aria-label="買い物メモ">
+    <div class="tabs" role="tablist" aria-label="メモの表示を切り替える">
+      <button id="tab-shopping" type="button" class="tab" role="tab" aria-selected="true" aria-controls="shopping-panel" tabindex="0">買い物メモ <span id="tab-shopping-count" class="tab-count">0</span></button>
+      <button id="tab-favorites" type="button" class="tab" role="tab" aria-selected="false" aria-controls="favorites-panel" tabindex="-1">★ 定番 <span id="tab-favorites-count" class="tab-count">0</span></button>
+    </div>
+    <section id="shopping-panel" class="panel" role="tabpanel" aria-labelledby="tab-shopping">
       <div class="add-section">
         <p class="section-kicker">買うものを追加</p>
         <form id="add-form" class="add-form" autocomplete="off">
           <input id="add-input" class="add-input" type="text" maxlength="120" placeholder="例：牛乳、卵、洗剤…" aria-label="買うものの名前" required>
           <button class="primary-button" type="submit" aria-label="追加する"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>追加</span></button>
         </form>
-        <p class="hint">入力して「追加」を押すだけ。メモは自動保存されます。</p>
+        <p class="hint">入力して「追加」を押すだけ。商品の「☆ 定番」で繰り返し買うものを登録できます。</p>
       </div>
       <div class="subheader"><h2>これから買うもの</h2><span class="count" id="pending-count">0 件</span></div>
       <ul class="items" id="pending-list" aria-label="これから買うもの"></ul>
@@ -125,6 +159,18 @@
       <div id="completed-area" hidden>
         <div class="done-title"><h2 id="completed-title">購入済み 0件</h2><button type="button" id="clear-button" class="text-button">購入済みを削除</button></div>
         <ul class="items" id="completed-list" aria-label="購入済みの商品"></ul>
+      </div>
+    </section>
+
+    <section id="favorites-panel" class="panel" role="tabpanel" aria-labelledby="tab-favorites" hidden>
+      <div class="favorite-intro">
+        <h2>定番の買い物</h2>
+        <p>いつも買うものを保存しておけます。購入後に買い物メモから消しても、ここには残ります。</p>
+      </div>
+      <ul class="items favorite-list" id="favorites-list" aria-label="定番に登録したもの"></ul>
+      <div id="favorites-empty" class="empty">
+        <div class="empty-illustration" aria-hidden="true">★</div>
+        <p><strong>定番はまだありません</strong>買い物メモで「☆ 定番」を押すと、ここに追加されます。</p>
       </div>
     </section>
 
@@ -152,10 +198,12 @@
       const $ = id => document.getElementById(id);
       const icon = {
         edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9M16.5 4.5a2.12 2.12 0 0 1 3 3L9 18l-4 1 1-4L16.5 4.5Z"/></svg>',
-        trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6M10 10v6M14 10v6"/></svg>'
+        trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6M10 10v6M14 10v6"/></svg>',
+        star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3-4.6-4.5 6.3-.9z"/></svg>'
       };
       let items = [];
       let editId = null;
+      let activeTab = 'shopping';
       let toastTimeout;
       let canStore = true;
 
@@ -169,12 +217,15 @@
       }
       function isValidItem(x) {
         return x && typeof x === 'object' && typeof x.id === 'string' && x.id.length > 0 && x.id.length < 150 &&
-          typeof x.text === 'string' && x.text.trim().length > 0 && x.text.length <= 120 && typeof x.done === 'boolean';
+          typeof x.text === 'string' && x.text.trim().length > 0 && x.text.length <= 120 && typeof x.done === 'boolean' &&
+          (x.favorite === undefined || typeof x.favorite === 'boolean') &&
+          (x.archived === undefined || typeof x.archived === 'boolean');
       }
       function normalizeItems(data) {
         if (!Array.isArray(data) || data.length > MAX_ITEMS || !data.every(isValidItem)) throw new Error('データの形式が正しくありません。');
         if (new Set(data.map(x => x.id)).size !== data.length) throw new Error('データに重複があります。');
-        return data.map(x => ({id:x.id, text:x.text.trim(), done:x.done}));
+        // Ver.1のデータもそのまま利用できる。定番フラグは未設定ならfalse。
+        return data.map(x => ({id:x.id, text:x.text.trim(), done:x.done, favorite:x.favorite===true, archived:x.favorite===true && x.archived===true}));
       }
       function readSaved() {
         canStore = storageWorks();
@@ -208,6 +259,55 @@
         return typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
       }
       function modify(fn) { fn(); save(); render(); }
+      function setTab(which) {
+        activeTab = which;
+        $('shopping-panel').hidden = which !== 'shopping';
+        $('favorites-panel').hidden = which !== 'favorites';
+        for (const [name, buttonId] of [['shopping','tab-shopping'],['favorites','tab-favorites']]) {
+          const tab = $(buttonId), selected = name===which;
+          tab.setAttribute('aria-selected',String(selected));
+          tab.tabIndex = selected ? 0 : -1;
+        }
+      }
+      for (const [which,id] of [['shopping','tab-shopping'],['favorites','tab-favorites']]) {
+        $(id).addEventListener('click',()=>{editId=null;setTab(which);render();});
+        $(id).addEventListener('keydown',e=>{
+          if (!['ArrowLeft','ArrowRight','Home','End'].includes(e.key)) return;
+          e.preventDefault();
+          const target = e.key==='ArrowLeft'||e.key==='Home'?'shopping':'favorites';
+          editId=null;setTab(target);render();$(target==='shopping'?'tab-shopping':'tab-favorites').focus();
+        });
+      }
+      function toggleFavorite(item) {
+        modify(()=>{
+          item.favorite=!item.favorite;
+          if (!item.favorite && item.archived) items=items.filter(x=>x.id!==item.id);
+        });
+        toast(item.favorite?'定番に登録しました':'定番を解除しました');
+      }
+      function returnToShopping(item) {
+        modify(()=>{item.done=false;item.archived=false;});
+        editId=null;setTab('shopping');render();
+        toast('買い物メモに戻しました');
+      }
+      function editForm(item) {
+        const form=document.createElement('form');
+        form.className='edit-form';
+        const input=document.createElement('input');
+        input.className='edit-input';input.maxLength=120;input.value=item.text;input.required=true;
+        input.setAttribute('aria-label','品名を編集');
+        const saveBtn=document.createElement('button');saveBtn.type='submit';saveBtn.className='edit-save';saveBtn.textContent='保存';
+        const cancel=document.createElement('button');cancel.type='button';cancel.className='edit-cancel';cancel.textContent='取消';
+        cancel.addEventListener('click',()=>{editId=null;render();});
+        form.addEventListener('submit',e=>{
+          e.preventDefault();const value=input.value.trim();
+          if(!value){toast('品名を入力してください');return;}
+          editId=null;modify(()=>{item.text=value;});toast('品名を変更しました');
+        });
+        form.append(input,saveBtn,cancel);
+        requestAnimationFrame(()=>{input.focus();input.select();});
+        return form;
+      }
       function makeButton(label, name, handler, className) {
         const button = document.createElement('button');
         button.type='button'; button.className='icon-button '+(className||'');
@@ -221,67 +321,100 @@
         const li=document.createElement('li');
         li.className='item'+(item.done?' completed':'');
         if (editId === item.id) {
-          const form=document.createElement('form');
-          form.className='edit-form';
-          const input=document.createElement('input');
-          input.className='edit-input';input.maxLength=120;input.value=item.text;input.required=true;
-          input.setAttribute('aria-label','品名を編集');
-          const saveBtn=document.createElement('button');saveBtn.type='submit';saveBtn.className='edit-save';saveBtn.textContent='保存';
-          const cancel=document.createElement('button');cancel.type='button';cancel.className='edit-cancel';cancel.textContent='取消';
-          cancel.addEventListener('click',()=>{editId=null;render();});
-          form.addEventListener('submit',e=>{
-            e.preventDefault();
-            const value=input.value.trim();
-            if(!value){toast('品名を入力してください');return;}
-            editId=null;
-            modify(()=>{item.text=value;});
-            toast('品名を変更しました');
-          });
-          form.append(input,saveBtn,cancel);
-          li.append(form);
-          requestAnimationFrame(()=>{input.focus();input.select();});
+          li.append(editForm(item));
           return li;
         }
         const label=document.createElement('label');label.className='checklabel';
         const check=document.createElement('input');check.type='checkbox';check.className='check';check.checked=item.done;
-        check.setAttribute('aria-label',item.text+'を購入済みにする');
+        check.setAttribute('aria-label',item.text+'を'+(item.done?'未購入に戻す':'購入済みにする'));
         const text=document.createElement('span');text.className='item-text';text.textContent=item.text;
         label.append(check,text);
         check.addEventListener('change',()=>modify(()=>{item.done=check.checked;}));
+        const favorite=document.createElement('button');
+        favorite.type='button';favorite.className='favorite-button';
+        favorite.setAttribute('aria-pressed',String(item.favorite));
+        favorite.setAttribute('aria-label',item.text+(item.favorite?'の定番を解除':'を定番に登録'));
+        favorite.innerHTML=icon.star+'<span>定番</span>';
+        favorite.addEventListener('click',()=>toggleFavorite(item));
         const edit=makeButton(item.text+'を編集','edit',()=>{editId=item.id;render();});
-        const remove=makeButton(item.text+'を削除','trash',()=>{modify(()=>{items=items.filter(x=>x.id!==item.id);});toast('1件削除しました');},'remove-button');
-        li.append(label,edit,remove);
+        const remove=makeButton(item.text+'を買い物メモから削除','trash',()=>{
+          modify(()=>{
+            if(item.favorite){item.archived=true;item.done=false;}
+            else items=items.filter(x=>x.id!==item.id);
+          });
+          toast(item.favorite?'買い物メモから削除しました（定番には残ります）':'1件削除しました');
+        },'remove-button');
+        li.append(label,favorite,edit,remove);
+        return li;
+      }
+      function favoriteRow(item) {
+        const li=document.createElement('li');li.className='favorite-item';
+        if(editId===item.id){li.append(editForm(item));return li;}
+        const info=document.createElement('div');info.className='favorite-item-info';
+        const title=document.createElement('span');title.className='favorite-item-name';title.textContent=item.text;
+        const status=document.createElement('span');status.className='favorite-item-status';
+        const pending=!item.archived&&!item.done;
+        status.textContent=pending?'買い物メモに登録中':(!item.archived?'購入済み':'メモに未登録');
+        info.append(title,status);
+        const add=document.createElement('button');add.type='button';add.className='bring-back';
+        add.textContent=pending?'登録中':'メモに戻す';
+        add.disabled=pending;
+        add.setAttribute('aria-label',item.text+(pending?'は買い物メモに登録済み':'を買い物メモに戻す'));
+        add.addEventListener('click',()=>returnToShopping(item));
+        const edit=makeButton(item.text+'を編集','edit',()=>{editId=item.id;render();});
+        const remove=document.createElement('button');remove.className='favorite-remove';remove.type='button';
+        remove.innerHTML=icon.trash;remove.title='定番を解除';remove.setAttribute('aria-label',item.text+'を定番から削除');
+        remove.addEventListener('click',()=>toggleFavorite(item));
+        li.append(info,add,edit,remove);
         return li;
       }
       function render() {
-        const pending=items.filter(x=>!x.done);
-        const completed=items.filter(x=>x.done);
+        const visible=items.filter(x=>!x.archived);
+        const pending=visible.filter(x=>!x.done);
+        const completed=visible.filter(x=>x.done);
+        const favorites=items.filter(x=>x.favorite);
         $('pending-count').textContent=pending.length+' 件';
         $('completed-title').textContent='購入済み '+completed.length+'件';
+        $('tab-shopping-count').textContent=pending.length;
+        $('tab-favorites-count').textContent=favorites.length;
         $('pending-list').replaceChildren(...pending.map(row));
         $('completed-list').replaceChildren(...completed.map(row));
+        $('favorites-list').replaceChildren(...favorites.map(favoriteRow));
         $('empty').hidden=pending.length!==0;
         $('completed-area').hidden=completed.length===0;
+        $('favorites-empty').hidden=favorites.length!==0;
       }
       $('add-form').addEventListener('submit',e=>{
         e.preventDefault();
         const input=$('add-input');const value=input.value.trim();
         if(!value) return;
+        const existing=items.find(x=>x.favorite && x.text===value);
+        if(existing){
+          if(!existing.archived && !existing.done){toast('この定番は買い物メモに登録済みです');return;}
+          modify(()=>{existing.done=false;existing.archived=false;});
+          input.value='';input.focus();toast('定番を買い物メモに戻しました');return;
+        }
         if(items.length>=MAX_ITEMS){toast('登録できる件数の上限です');return;}
-        modify(()=>items.push({id:newId(),text:value,done:false}));
+        modify(()=>items.push({id:newId(),text:value,done:false,favorite:false,archived:false}));
         input.value='';
         input.focus();
         toast('追加しました');
       });
       $('clear-button').addEventListener('click',()=>{
-        const count=items.filter(x=>x.done).length;
-        if(count && confirm('購入済み '+count+'件をすべて削除しますか？')) {
-          modify(()=>{items=items.filter(x=>!x.done);});
-          toast('購入済みを削除しました');
+        const count=items.filter(x=>x.done && !x.archived).length;
+        if(count && confirm('購入済み '+count+'件を買い物メモから削除しますか？（定番に登録した品物は定番タブに残ります）')) {
+          modify(()=>{
+            items=items.filter(x=>{
+              if(!x.done || x.archived)return true;
+              if(x.favorite){x.done=false;x.archived=true;return true;}
+              return false;
+            });
+          });
+          toast('購入済みを削除しました（定番は保持）');
         }
       });
       $('export-button').addEventListener('click',()=>{
-        const data=JSON.stringify({format:FORMAT,version:1,exportedAt:new Date().toISOString(),items},null,2);
+        const data=JSON.stringify({format:FORMAT,version:2,exportedAt:new Date().toISOString(),items},null,2);
         const url=URL.createObjectURL(new Blob([data],{type:'application/json;charset=utf-8'}));
         const a=document.createElement('a');a.href=url;
         const local=new Date();
@@ -299,9 +432,9 @@
         try{
           if(file.size>1048576) throw new Error('ファイルが大きすぎます。');
           const data=JSON.parse(await file.text());
-          if(!data || data.format!==FORMAT || data.version!==1)throw new Error('このアプリのバックアップファイルではありません。');
+          if(!data || data.format!==FORMAT || ![1,2].includes(data.version))throw new Error('このアプリのバックアップファイルではありません。');
           const restored=normalizeItems(data.items);
-          if(!confirm('現在のメモ '+items.length+'件を、バックアップの '+restored.length+'件で置き換えます。よろしいですか？'))return;
+          if(!confirm('現在のデータ '+items.length+'件（定番含む）を、バックアップの '+restored.length+'件で置き換えます。よろしいですか？'))return;
           editId=null;
           modify(()=>{items=restored;});
           toast(restored.length+'件を復元しました');
@@ -317,6 +450,7 @@
       if ('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost' || location.hostname==='127.0.0.1')) {
         window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
       }
+
     })();
   </script>
 </body>
